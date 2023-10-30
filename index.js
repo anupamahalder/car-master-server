@@ -38,6 +38,9 @@ async function run() {
 
     // create collection for service data 
     const serviceCollection = client.db('carmaster').collection('serviceData');
+    // create collection to store service booking data 
+    const bookingCollection = client.db('carmaster').collection('bookingData');
+
 
     // create api to fetch data 
     app.get('/services',async(req, res)=>{
@@ -49,13 +52,30 @@ async function run() {
     app.get('/services/:id', async(req, res)=>{
         const id = req.params.id;
         const query = {_id: new ObjectId(id)};
-        const options = {
-          // if we want some property then write 1 else 0 and by default _id will be provided 
-          projection: {title: 1, price: 1 ,service_id:1},
-        };
-        const result = await serviceCollection.findOne(query,options);
+        // const options = {
+        //   // if we want some property then write 1 else 0 and by default _id will be provided 
+        //   projection: {title: 1, price: 1, img:1 ,service_id:1},
+        // };
+        // const result = await serviceCollection.findOne(query,options);
+        const result = await serviceCollection.findOne(query);
         res.send(result);
     })
+    // ---------------------Bookings service-------------------------
+    // create a api to post/create data and store to database 
+    app.post('/bookings', async(req, res)=>{
+      // get data from req.body 
+      const booking = req.body;
+      // console.log(booking);
+      const result = await bookingCollection.insertOne(booking);
+      res.send(result);
+    })
+    // read data from bookings 
+    app.get('/bookings', async(req, res)=>{
+      const cursor = bookingCollection.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    })
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
