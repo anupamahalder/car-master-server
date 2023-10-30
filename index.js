@@ -3,7 +3,7 @@ const cors = require('cors');
 const app = express();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
-const port = process.env.PORT || 5000;
+const port = process.env.PORT || 5050;
 require('dotenv').config();
 //middleware
 app.use(cors());
@@ -82,6 +82,13 @@ async function run() {
       const result = await cursor.toArray();
       res.send(result);
     })
+    // read a specific data from bookings data 
+    app.get('/bookings/:id', async(req, res)=>{
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)};
+      const result = await bookingCollection.findOne(query);
+      res.send(result);
+    })
     // create delete api to delete bookings by id 
     app.delete('/bookings/:id', async(req, res)=>{
       const id = req.params.id;
@@ -89,9 +96,23 @@ async function run() {
       const result = await bookingCollection.deleteOne(query);
       res.send(result);
     })
+    // update booking 
+    app.patch('/bookings/:id', async(req, res)=>{
+      const id = req.params.id;
+      const filter = {_id: new ObjectId(id)};
+      const updateBooking = req.body;
+      const updatedDoc = {
+        $set:{
+          status: updateBooking.status
+        },
+      };
+      console.log("update booking",updateBooking);
+      const result = await bookingCollection.updateOne(filter, updatedDoc);
+      res.send(result);
+    })
 
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
