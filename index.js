@@ -69,9 +69,16 @@ async function run() {
       const result = await bookingCollection.insertOne(booking);
       res.send(result);
     })
-    // read data from bookings 
+    // read all data from bookings conditionally from query
     app.get('/bookings', async(req, res)=>{
-      const cursor = bookingCollection.find();
+      console.log(req.query.email);
+      // empty object 
+      let query = {};
+      if(req.query?.email){
+        // filter based on email 
+        query = {email: req.query.email}
+      }
+      const cursor = bookingCollection.find(query);
       const result = await cursor.toArray();
       res.send(result);
     })
