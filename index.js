@@ -37,6 +37,13 @@ const client = new MongoClient(uri, {
   }
 });
 
+// create our own middlewares (to create middleware we need three things: req, res, next)
+// we can use this middleware at multiple places 
+const logger = async(req, res, next) =>{
+  console.log('called:', req.host, req.originalUrl)
+  next();
+}; 
+
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
@@ -48,7 +55,8 @@ async function run() {
     const bookingCollection = client.db('carmaster').collection('bookingData');
 
     // ------------------------------Auth related api--------------------------
-    app.post('/jwt', async(req, res)=>{
+    // here we put our looger middleware after the url and when this url hit it will go to this middleware
+    app.post('/jwt',logger, async(req, res)=>{
       const user = req.body;
       console.log(user);
       // sign(payload, secret, options(expired time))
@@ -64,7 +72,7 @@ async function run() {
 
     // ---------------------------Services related api-------------------------
     // create api to fetch data 
-    app.get('/services',async(req, res)=>{
+    app.get('/services', logger ,async(req, res)=>{
         const cursor = serviceCollection.find();
         const result = await cursor.toArray();
         res.send(result);
@@ -91,7 +99,7 @@ async function run() {
       res.send(result);
     })
     // read all data from bookings conditionally from query
-    app.get('/bookings', async(req, res)=>{
+    app.get('/bookings', logger , async(req, res)=>{
       console.log(req.query.email);
       console.log('Token coming->',req.cookies.token);
       // empty object 
