@@ -126,6 +126,10 @@ async function run() {
       console.log(req.query.email);
       console.log('Token coming->',req.cookies.token);
       console.log('User in the valid token', req.user);
+      // if user and requesting data for someone matches then only user gets data else one user cannot get other user's data 
+      if(req.query.email !== req.user.email){
+        return res.status(403).send({message: 'forbidden access'});
+      }
       // empty object 
       let query = {};
       if(req.query?.email){
