@@ -43,6 +43,29 @@ const logger = async(req, res, next) =>{
   console.log('called:', req.host, req.originalUrl)
   next();
 }; 
+// another middleware it will be used where we want some security
+const verifyToken = async(req, res, next) =>{
+  // in this middleware we want to get the token (in req.cookies there can be token or not)
+  const token = req.cookies?.token;
+  console.log('Value of token inside middleware:',token);
+  // if token is not there then return with a message and status
+  if(!token){
+    return res.status(401).send({message: 'not authorized'});
+  }
+  // verify the token (token, secret, callback function)
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded)=>{
+    // error 
+    if(err){
+      console.log(err);
+      return res.status(401).send({message: 'unauthorized'});
+    }
+    // if token is valid then it will be decoded and go to next 
+    console.log('value in the token', decoded);
+    // set the user info in any thing req.user and instead of user we can write anything
+    req.user = decoded;
+    next();
+  })
+}
 
 async function run() {
   try {
@@ -99,9 +122,10 @@ async function run() {
       res.send(result);
     })
     // read all data from bookings conditionally from query
-    app.get('/bookings', logger , async(req, res)=>{
+    app.get('/bookings', logger, verifyToken, async(req, res)=>{
       console.log(req.query.email);
       console.log('Token coming->',req.cookies.token);
+      console.log('User in the valid token', req.user);
       // empty object 
       let query = {};
       if(req.query?.email){
