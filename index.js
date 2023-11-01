@@ -1,14 +1,19 @@
 const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
 const app = express();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 const port = process.env.PORT || 5050;
 require('dotenv').config();
 //middleware
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:5173'],
+  credentials: true
+}));
 app.use(express.json());
+app.use(cookieParser());
 
 // run server on root 
 app.get('/',(req, res)=>{
@@ -48,11 +53,11 @@ async function run() {
       console.log(user);
       // sign(payload, secret, options(expired time))
       const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {expiresIn: '1h'});
+      // set cookies 
       res
-      .cookie('token', token, {
+      .cookie('token', token,{
         httpOnly: true,
         secure: false,
-        sameSite: 'none'
       })
       .send({success: true});
     })
@@ -88,6 +93,7 @@ async function run() {
     // read all data from bookings conditionally from query
     app.get('/bookings', async(req, res)=>{
       console.log(req.query.email);
+      console.log('Token coming->',req.cookies.token);
       // empty object 
       let query = {};
       if(req.query?.email){
