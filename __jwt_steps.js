@@ -12,5 +12,13 @@
  */
 
 /**
- * set cookies with http only
+ * 1. set cookies with http only (for development secure: false)
+ * 2. cors setting
+ * app.use(cors({
+    origin: ['http://localhost:5173'],
+    credentials: true
+    }));
+    this cors setting is important
+ * 3. set cookies to browser from client side with withCredentials by axios settings
+    in axios set withCredentials: true
  */

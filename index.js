@@ -9,7 +9,7 @@ const port = process.env.PORT || 5050;
 require('dotenv').config();
 //middleware
 app.use(cors({
-  origin: ['http://localhost:5173'],
+  origin: ['http://localhost:5173', 'http://localhost:5174'],
   credentials: true
 }));
 app.use(express.json());
@@ -36,36 +36,56 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   }
 });
-
-// create our own middlewares (to create middleware we need three things: req, res, next)
-// we can use this middleware at multiple places 
-const logger = async(req, res, next) =>{
-  console.log('called:', req.hostname, req.originalUrl)
+// ------------------Create middleware------------------
+const logger = async(req, res, next)=>{
+  console.log('called', req.hostname, req.originalUrl);
   next();
-}; 
-// another middleware it will be used where we want some security
-const verifyToken = async(req, res, next) =>{
-  // in this middleware we want to get the token (in req.cookies there can be token or not)
+}
+const verifyToken = async(req, res, next)=>{
   const token = req.cookies?.token;
-  console.log('Value of token inside middleware:',token);
-  // if token is not there then return with a message and status
   if(!token){
-    return res.status(401).send({message: 'not authorized'});
+    return res.status(401).send({message: 'Unauthorized access'});
   }
-  // verify the token (token, secret, callback function)
   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded)=>{
     // error 
     if(err){
-      console.log(err);
-      return res.status(401).send({message: 'unauthorized'});
+      return res.status(401).send({message: 'unauthorized access'});
     }
-    // if token is valid then it will be decoded and go to next 
+    // if token is valid then i will be decoded 
     console.log('value in the token', decoded);
-    // set the user info in any thing req.user and instead of user we can write anything
     req.user = decoded;
     next();
   })
 }
+// // create our own middlewares (to create middleware we need three things: req, res, next)
+// // we can use this middleware at multiple places 
+// const logger = async(req, res, next) =>{
+//   console.log('called:', req.hostname, req.originalUrl)
+//   next();
+// }; 
+// // another middleware it will be used where we want some security
+// const verifyToken = async(req, res, next) =>{
+//   // in this middleware we want to get the token (in req.cookies there can be token or not)
+//   const token = req.cookies?.token;
+//   console.log('Value of token inside middleware:',token);
+//   // if token is not there then return with a message and status
+//   if(!token){
+//     return res.status(401).send({message: 'not authorized'});
+//   }
+//   // verify the token (token, secret, callback function)
+//   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded)=>{
+//     // error 
+//     if(err){
+//       console.log(err);
+//       return res.status(401).send({message: 'unauthorized'});
+//     }
+//     // if token is valid then it will be decoded and go to next 
+//     console.log('value in the token', decoded);
+//     // set the user info in any thing req.user and instead of user we can write anything
+//     req.user = decoded;
+//     next();
+//   })
+// }
 
 async function run() {
   try {
@@ -79,7 +99,7 @@ async function run() {
 
     // ------------------------------Auth related api--------------------------
     // here we put our looger middleware after the url and when this url hit it will go to this middleware
-    app.post('/jwt', async(req, res)=>{
+    app.post('/jwt', logger, async(req, res)=>{
       // get data 
       const user = req.body;
       console.log(user);
@@ -89,7 +109,6 @@ async function run() {
       .cookie('token', token, {
         httpOnly: true,
         secure: false, //for localhost 
-        sameSite: 'none'
       })
       .send({success: true});
     })
@@ -133,6 +152,7 @@ async function run() {
     app.post('/bookings', async(req, res)=>{
       // get data from req.body 
       const booking = req.body;
+      console.log('Token from client:', req.cookies.token);
       // console.log(booking);
       const result = await bookingCollection.insertOne(booking);
       res.send(result);
@@ -143,9 +163,12 @@ async function run() {
       console.log('Token coming->',req.cookies.token);
       console.log('User in the valid token', req.user);
       // if user and requesting data for someone matches then only user gets data else one user cannot get other user's data 
-      if(req.query.email !== req.user.email){
+      if(req.query.email != req.user.email){
         return res.status(403).send({message: 'forbidden access'});
       }
+      // if(req.query.email !== req.user.email){
+      //   return res.status(403).send({message: 'forbidden access'});
+      // }
       // empty object 
       let query = {};
       if(req.query?.email){
