@@ -40,7 +40,7 @@ const client = new MongoClient(uri, {
 // create our own middlewares (to create middleware we need three things: req, res, next)
 // we can use this middleware at multiple places 
 const logger = async(req, res, next) =>{
-  console.log('called:', req.host, req.originalUrl)
+  console.log('called:', req.hostname, req.originalUrl)
   next();
 }; 
 // another middleware it will be used where we want some security
@@ -79,19 +79,29 @@ async function run() {
 
     // ------------------------------Auth related api--------------------------
     // here we put our looger middleware after the url and when this url hit it will go to this middleware
-    app.post('/jwt',logger, async(req, res)=>{
+    app.post('/jwt', async(req, res)=>{
+      // get data 
       const user = req.body;
       console.log(user);
-      // sign(payload, secret, options(expired time))
-      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {expiresIn: '1h'});
-      // set cookies 
-      res
-      .cookie('token', token,{
-        httpOnly: true,
-        secure: false,
-      })
-      .send({success: true});
+      // create a jwt sign 
+      const token = jwt.sign(user, 'secret', {expiresIn: '1h'});
+      res.send(token);
     })
+
+
+    // app.post('/jwt',logger, async(req, res)=>{
+    //   const user = req.body;
+    //   console.log(user);
+    //   // sign(payload, secret, options(expired time))
+    //   const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {expiresIn: '1h'});
+    //   // set cookies 
+    //   res
+    //   .cookie('token', token,{
+    //     httpOnly: true,
+    //     secure: false,
+    //   })
+    //   .send({success: true});
+    // })
 
     // ---------------------------Services related api-------------------------
     // create api to fetch data 
